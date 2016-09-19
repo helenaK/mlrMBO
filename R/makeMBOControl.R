@@ -91,6 +91,12 @@
 #'    Priorize by time? Meaning short predicted jobs will run first. Default is \code{FALSE}.
 #' @param schedule.fill.random [\code{logical(1)}]\cr
 #'    If scheduling does not fill all nodes, should we fill it with random points which have fast enough runtime? Default is \code{TRUE}.
+#' @param time.model.trafo.log [\code{logical(1)}]\cr
+#'    Should the time model be learned on log-transformed times? Default is \code{FALSE}.
+#' @param asyn.wait.for.proposals [\code{logical(1)}]\cr
+#'    Should waiting be enabled for proposals? Default is \code{TRUE}.
+#' @param asyn.filter.proposals [\code{logical(1)}]\cr
+#'    Should proposed points be filtered? Only works with \code{filter.proposed.points = TRUE}. Default is \code{FALSE}.
 #' @return [\code{\link{MBOControl}}].
 #' @aliases MBOControl
 #' @family MBOControl
@@ -114,7 +120,11 @@ makeMBOControl = function(n.objectives = 1L,
   schedule.nodes = 1L,
   schedule.priority = "infill",
   schedule.priority.time = FALSE,
-  schedule.fill.random = TRUE
+  schedule.fill.random = TRUE,
+  schedule.cluster = FALSE,
+  time.model.trafo.log = FALSE,
+  asyn.wait.for.proposals = TRUE,
+  asyn.filter.proposals = FALSE
 ) {
 
   n.objectives = asInt(n.objectives, lower = 1L)
@@ -138,7 +148,7 @@ makeMBOControl = function(n.objectives = 1L,
 
   # If debug-mode, turn of saving.
   if (getOption("mlrMBO.debug.mode", default = FALSE))
-    save.on.disk.at = NULL
+    save.on.disk.at = integer(0L)
 
   assertNumeric(save.on.disk.at.time, lower = 0, finite = FALSE, len = 1)
   if (!is.null(store.model.at)) assertIntegerish(store.model.at)
@@ -147,10 +157,11 @@ makeMBOControl = function(n.objectives = 1L,
   assertList(resample.measures, types = "Measure")
 
   assertString(output.num.format)
-  assertChoice(schedule.method, choices = c("none", "smartParallelMap", "asyn", "scheduleKnapsack"))
+  assertChoice(schedule.method, choices = c("none", "smartParallelMap", "asyn", "scheduleKnapsack", "scheduleCluster"))
   schedule.nodes = asInteger(schedule.nodes, upper = propose.points)
   assertChoice(schedule.priority, choices = c("infill", "explore", "exploit", "balanced"))
   assertFlag(schedule.priority.time)
+  assertFlag(schedule.cluster)
 
   control = makeS3Obj("MBOControl",
     n.objectives = n.objectives,
@@ -174,6 +185,10 @@ makeMBOControl = function(n.objectives = 1L,
     schedule.priority = schedule.priority,
     schedule.priority.time = schedule.priority.time,
     schedule.fill.random = schedule.fill.random,
+    schedule.cluster = schedule.cluster,
+    time.model.trafo.log = time.model.trafo.log,
+    asyn.wait.for.proposals = asyn.wait.for.proposals,
+    asyn.filter.proposals = asyn.filter.proposals,
     multifid = FALSE
   )
 
